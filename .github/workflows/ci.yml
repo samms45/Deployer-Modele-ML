@@ -16,14 +16,18 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Installer les outils
+    - name: Installer les dépendances
       run: |
         python -m pip install --upgrade pip
-        # On ajoute python-dotenv qui manquait
-        pip install pytest fastapi httpx uvicorn joblib pandas scikit-learn sqlalchemy imblearn xgboost python-dotenv
+        pip install .
+        pip install httpx pytest-cov python-dotenv
 
     - name: Lancer les tests
+      # C'est ici qu'on donne les clés au robot pour la durée du test
+      env:
+        DATABASE_URL: postgresql://postgres:sam123@localhost:5432/rh_prediction_db
+        SECRET_KEY: "12345"
+        API_KEY: "mon_badge_secret_987"
       run: |
-        # PYTHONPATH . permet de dire au robot : "regarde dans le dossier courant pour trouver main.py"
         export PYTHONPATH=$PYTHONPATH:.
         pytest
