@@ -1,0 +1,29 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ "principal" ]
+  pull_request:
+    branches: [ "principal" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # On installe les outils nécessaires pour tes tests
+        pip install pytest fastapi httpx uvicorn joblib pandas scikit-learn sqlalchemy
+
+    - name: Run tests with pytest
+      run: |
+        pytest tests/
