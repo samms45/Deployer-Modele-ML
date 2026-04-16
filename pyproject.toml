@@ -1,0 +1,31 @@
+[project]
+name = "projet-api-openclassroom"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.135.2",
+    "httpx>=0.28.1",
+    "imblearn>=0.0",
+    "ipykernel>=7.2.0",
+    "ipywidgets>=8.1.8",
+    "jinja2>=3.1.6",
+    "joblib>=1.5.3",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.3",
+    "pandas>=3.0.1",
+    "psycopg2-binary>=2.9.11",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.1.0",
+    "python-dotenv>=1.2.2",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "seaborn>=0.13.2",
+    "shap>=0.51.0",
+    "sqlalchemy>=2.0.48",
+    "statsmodels>=0.14.6",
+    "tabulate>=0.10.0",
+    "uvicorn>=0.42.0",
+    "xgboost>=3.2.0",
+]
