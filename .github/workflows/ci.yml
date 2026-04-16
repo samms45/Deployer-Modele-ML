@@ -8,6 +8,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # On ajoute un service PostgreSQL pour le robot
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: rh_prediction_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: sam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v4
     
@@ -23,9 +39,9 @@ jobs:
         pip install httpx pytest-cov python-dotenv
 
     - name: Lancer les tests
-      # C'est ici qu'on donne les clés au robot pour la durée du test
       env:
-        DATABASE_URL: postgresql://postgres:sam123@localhost:5432/rh_prediction_db
+        # On utilise les infos du service postgres ci-dessus
+        DATABASE_URL: postgresql://postgres:sam@localhost:5432/rh_prediction_db
         SECRET_KEY: "12345"
         API_KEY: "mon_badge_secret_987"
       run: |
