@@ -40,10 +40,11 @@ jobs:
 
     - name: Lancer les tests
       env:
-        # On utilise les infos du service postgres ci-dessus
         DATABASE_URL: postgresql://postgres:sam@localhost:5432/rh_prediction_db
         SECRET_KEY: "12345"
         API_KEY: "mon_badge_secret_987"
       run: |
         export PYTHONPATH=$PYTHONPATH:.
+        # AJOUT : On crée les tables dans la DB de GitHub avant de lancer pytest
+        python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
         pytest

@@ -1,18 +1,21 @@
-
+import os
 from fastapi.testclient import TestClient
 from main import app  # On importe ton code FastAPI
 
-client = TestClient(app) # On crée le client de test qui va simuler les requêtes HTTP
+client = TestClient(app)
 
+# --- CONFIGURATION DE LA SÉCURITÉ ---
+# On récupère la clé API définie dans le .env (ou le CI)
+# Si elle n'existe pas, on met une valeur par défaut pour éviter que ça plante
+API_KEY = os.getenv("API_KEY", "mon_badge_secret_987")
+HEADERS = {"X-API-KEY": API_KEY} 
 
 # --- 1. TEST DE SUCCÈS (Le "Happy Path") ---
 def test_predict_success():
-
     """
     Vérifie que l'API répond 200 et donne une prédiction 
     quand les données sont parfaitement remplies.
     """
-
     test_data = {
         "age": 41,
         "genre": "F",
@@ -45,46 +48,37 @@ def test_predict_success():
         "ratio_fidelite_manager": 1.1
     }
 
-    # 2. On envoie la requête POST à l'API
-    response = client.post("/predict", json=test_data)
+    # AJOUT : On passe les HEADERS ici
+    response = client.post("/predict", json=test_data, headers=HEADERS)
 
-    # 3. Les vérifications (Le robot vérifie le résultat)
-    # On vérifie que le code de retour est 200 (Succès)
     assert response.status_code == 200
     
-    # On vérifie que la réponse contient bien les clés que tu as définies dans main.py
     data = response.json()
     assert "prediction" in data
     assert "resultat" in data
     assert "probabilite_depart" in data
-    
-    # Optionnel : On peut même vérifier que la probabilité est cohérente (entre 0 et 1)
     assert 0 <= data["probabilite_depart"] <= 1
 
 
-    # --- 2. TEST D'ERREUR (Le "Negative Test") ---
+# --- 2. TEST D'ERREUR (Le "Negative Test") ---
 def test_predict_invalid_data():
     """
     Vérifie que l'API rejette les requêtes avec des données manquantes.
-    Elle doit répondre 422 (Unprocessable Entity).
     """
-    # On envoie seulement l'âge (il manque tous les autres champs !)
     incomplete_data = {"age": 30}
 
-    # On envoie la requête
-    response = client.post("/predict", json=incomplete_data)
+    # AJOUT : On passe les HEADERS même pour une erreur attendue
+    # Car sinon on recevra un 403 (Interdit) avant même que l'API ne vérifie les données (422)
+    response = client.post("/predict", json=incomplete_data, headers=HEADERS)
 
-    # Vérification : On attend une erreur 422 de la part de FastAPI/Pydantic
     assert response.status_code == 422
-    print(f"\nSécurité : L'API a bien rejeté les données incomplètes (Code {response.status_code})")
 
 
+# --- 3. TEST DE SEUIL (Edge Cases) ---
 def test_predict_edge_case_minimums():
     """
-    Test de Seuil : On teste les valeurs minimales (18 ans, 0 expérience, 0 revenu).
-    L'API doit répondre 200 et donner une prédiction cohérente.
+    Test de Seuil : Valeurs minimales.
     """
-    # On prend les valeurs les plus basses possibles
     edge_data = {
         "age": 18,
         "genre": "M",
@@ -117,13 +111,7 @@ def test_predict_edge_case_minimums():
         "ratio_fidelite_manager": 0.0
     }
 
-    response = client.post("/predict", json=edge_data)
+    # AJOUT : On passe les HEADERS ici
+    response = client.post("/predict", json=edge_data, headers=HEADERS)
 
-    # On vérifie que ça passe (200)
     assert response.status_code == 200
-    
-    data = response.json()
-    print("\n--- Test de Seuil (Valeurs Min) ---")
-    print(f"Prédiction    : {data['prediction']}")
-    print(f"Résultat      : {data['resultat']}")
-    print(f"Probabilité   : {data['probabilite_depart']}")
