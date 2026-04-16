@@ -8,7 +8,7 @@ client = TestClient(app)
 # On récupère la clé API définie dans le .env (ou le CI)
 # Si elle n'existe pas, on met une valeur par défaut pour éviter que ça plante
 API_KEY = os.getenv("API_KEY", "mon_badge_secret_987")
-HEADERS = {"X-API-KEY": API_KEY} 
+HEADERS = {"access_token": API_KEY}
 
 # --- 1. TEST DE SUCCÈS (Le "Happy Path") ---
 def test_predict_success():
