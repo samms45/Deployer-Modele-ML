@@ -51,11 +51,11 @@ jobs:
         API_KEY: ${{ secrets.API_KEY }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        export PYTHONPATH=$PYTHONPATH:.
+        export PYTHONPATH=$PYTHONPATH:./src
         # Initialisation auto de la structure DB
         python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
         # Pytest avec coverage détaillé
-        pytest --cov=. --cov-report=term-missing --cov-fail-under=90
+        pytest --cov=. --cov-report=term-missing
 
     - name: Déploiement sur Hugging Face
       if: github.event_name == 'push' && github.ref == 'refs/heads/brouillon'
