@@ -46,15 +46,19 @@ jobs:
 
     - name: Lancer les tests avec Rapport de Couverture
       env:
+        # On utilise le mot de passe "sam" comme dans la partie services
         DATABASE_URL: postgresql://postgres:sam@localhost:5432/rh_prediction_db
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         API_KEY: ${{ secrets.API_KEY }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
+        # 1. On ajoute le dossier src au chemin de recherche
         export PYTHONPATH=$PYTHONPATH:./src
-        # Initialisation auto de la structure DB
-        python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
-        # Pytest avec coverage détaillé
+        
+        # 2. On lance l'initialisation (on pointe bien sur src.db_config)
+        python -c "from src.db_config import engine; from src.db_models import Base; Base.metadata.create_all(bind=engine)"
+        
+        # 3. On lance pytest sur tout le projet
         pytest --cov=. --cov-report=term-missing
 
     - name: Déploiement sur Hugging Face
