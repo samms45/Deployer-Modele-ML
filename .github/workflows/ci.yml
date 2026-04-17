@@ -16,7 +16,8 @@ jobs:
         env:
           POSTGRES_DB: rh_prediction_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PASSWORD: sam
+          # POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -45,7 +46,7 @@ jobs:
 
     - name: Lancer les tests avec Rapport de Couverture
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        DATABASE_URL: postgresql://postgres:sam@localhost:5432/rh_prediction_db
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         API_KEY: ${{ secrets.API_KEY }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
