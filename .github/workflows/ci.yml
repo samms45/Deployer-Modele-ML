@@ -68,15 +68,19 @@ jobs:
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        # 1. Configuration Git
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
         
-        # 2. Installation et initialisation de Git LFS (crucial pour ton .joblib)
+        # 1. On s'assure que LFS est bien là
         git lfs install
         
-        # 3. On s'assure que le fichier est bien suivi par LFS
-        git lfs track "src/api/model_final_reg.joblib"
+        # 2. NETTOYAGE CRUCIAL : On force Git à oublier le fichier pour le re-traiter proprement
+        git rm --cached src/api/model_final_reg.joblib || echo "Déjà retiré"
+        git add .gitattributes
+        git add src/api/model_final_reg.joblib
         
-        # 4. Le push vers Hugging Face
+        # 3. On commit les changements LFS
+        git commit -m "data: force conversion to LFS for joblib model" || echo "Pas de changements"
+        
+        # 4. LE PUSH (avec l'option pour sauter la vérification binaire si possible)
         git push --force https://samss1010:$HF_TOKEN@huggingface.co/spaces/samss1010/api-prediction-rh brouillon:main
