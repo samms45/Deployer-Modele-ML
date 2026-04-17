@@ -26,7 +26,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+      with:
+        fetch-depth: 0
+        lfs: true
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -45,16 +48,11 @@ jobs:
         API_KEY: "mon_badge_secret_987"
       run: |
         export PYTHONPATH=$PYTHONPATH:.
-        # AJOUT : On crée les tables dans la DB de GitHub avant de lancer pytest
         python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
         pytest
 
-
-        # Déploiement automatique vers Hugging Face Spaces si les tests réussissent (CD)
     - name: Push to Hugging Face
-      uses: adrien-v/huggingface-sync-action@v1.1
-      with:
-        github-repo-name: samms45/Deployer-Modele-ML
-        huggingface-repo-name: samss1010/api-prediction-rh
-        hf-token: ${{ secrets.HF_TOKEN }}
-        hf-repo-type: space
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        git push --force https://samss1010:$HF_TOKEN@huggingface.co/spaces/samss1010/api-prediction-rh brouillon:main
