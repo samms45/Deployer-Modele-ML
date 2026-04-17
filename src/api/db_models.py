@@ -1,7 +1,7 @@
 # Définit la structure de tes tables.
 
 from sqlalchemy import Column, Integer, String, Float, DateTime
-from db_config import Base
+from src.api.db_config import Base
 import datetime
 
 class PredictionLog(Base):

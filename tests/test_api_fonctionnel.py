@@ -1,8 +1,14 @@
 import os
+import sys
+
+# Indispensable : on dit à Python que la racine du projet est le dossier parent
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from fastapi.testclient import TestClient
-from main import app  # On importe ton code FastAPI
+from main import app  # Maintenant Python va le trouver !
 
 client = TestClient(app)
+
 
 # --- CONFIGURATION DE LA SÉCURITÉ ---
 # On récupère la clé API définie dans le .env (ou le CI)

@@ -2,19 +2,25 @@ import pytest
 from fastapi.testclient import TestClient
 import sys
 import os
-from dotenv import load_dotenv # <--- AJOUT : Pour lire la clé
+from dotenv import load_dotenv
 
-# On charge le .env pour que le test connaisse la valeur de API_KEY
+# --- ÉTAPE 1 : RÉGLER LE GPS DE PYTHON ---
+# On dit à Python de regarder dans le dossier parent AVANT de faire les imports
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# --- ÉTAPE 2 : LES IMPORTS ---
+# Maintenant que le chemin est bon, on peut importer main
+from main import app
+from src.api.db_config import engine
+
+# --- ÉTAPE 3 : CONFIGURATION ---
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
-# On prépare le badge (Header) que l'on va envoyer dans chaque requête
 HEADERS = {"access_token": API_KEY}
 
-# Permet à Python de trouver main.py dans le dossier parent
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from main import app
-from db_config import engine
 
 client = TestClient(app)
 

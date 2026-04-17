@@ -1,18 +1,34 @@
 import os
 import joblib
 import pandas as pd
-from fastapi import FastAPI, Depends, HTTPException, Security, status # Ajout Security et status
-from fastapi.security.api_key import APIKeyHeader # Pour le système de badge
+from fastapi import FastAPI, Depends, HTTPException, Security, status
+from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from dotenv import load_dotenv # Pour lire le .env
+from dotenv import load_dotenv
+
+# --- CONFIGURATION DES CHEMINS & CHARGEMENT ---
+# On définit le point de repère (racine du projet)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "src", "api", "model_final_reg.joblib")
+
+# Chargement du modèle
+if os.path.exists(MODEL_PATH):
+    model = joblib.load(MODEL_PATH)
+else:
+    # Si tu ne veux vraiment pas de BASE_DIR, utilise au moins un print pour debugger
+    raise FileNotFoundError(f"Modèle introuvable à : {MODEL_PATH}")
+
+# --- LES IMPORTS DE TON CODE ---
+from src.api.db_config import engine, get_db 
+from src.api.db_models import Base, PredictionLog 
+from src.api.init_db import init_db
 
 # --- CONFIGURATION SÉCURITÉ ---
-load_dotenv() # On charge le .env (DATABASE_URL, API_KEY, etc.)
-API_KEY_VAL = os.getenv("API_KEY") # On récupère ton badge secret
-API_KEY_NAME = "access_token"      # Le nom que l'utilisateur devra taper
+load_dotenv()
+API_KEY_VAL = os.getenv("API_KEY")
+API_KEY_NAME = "access_token"
 
-# Le "Vigile" : il regarde si la clé dans le Header est la même que dans le .env
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 def get_api_key(header_api_key: str = Security(api_key_header)):
@@ -22,11 +38,8 @@ def get_api_key(header_api_key: str = Security(api_key_header)):
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Accès refusé : Clé API invalide ou absente"
     )
-# ------------------------------
 
-from db_config import get_db
-from db_models import PredictionLog
-
+# --- INITIALISATION API ---
 app = FastAPI(title="Prédiction Attrition RH Sécurisée")
 
 class EmployeeData(BaseModel):
@@ -60,15 +73,10 @@ class EmployeeData(BaseModel):
     attente_promotion_pure: int
     ratio_fidelite_manager: float
 
-# Chargement du modèle
-MODEL_PATH = os.path.join("models", "model_final_reg.joblib")
-model = joblib.load(MODEL_PATH)
-
 @app.get("/")
 def home():
     return {"message": "Bienvenue sur l'API RH. cimer les gros BouzBouz"}
 
-# ROUTE PRÉDICT : Ajout de la dépendance de sécurité
 @app.post("/predict", dependencies=[Depends(get_api_key)])
 def predict(data: EmployeeData, db: Session = Depends(get_db)):
     df_input = pd.DataFrame([data.model_dump()])
@@ -99,7 +107,6 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
         "probabilite_depart": round(probability, 2)
     }
 
-# ROUTE HISTORY : Ajout de la dépendance de sécurité
 @app.get("/history", dependencies=[Depends(get_api_key)])
 def get_history(db: Session = Depends(get_db)):
     try:
