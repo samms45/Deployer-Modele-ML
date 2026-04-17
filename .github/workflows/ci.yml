@@ -58,8 +58,10 @@ jobs:
         # 2. Initialisation de la DB (maintenant il trouvera db_config directement)
         python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
         
-        # 3. On lance les tests sur le dossier api
-        pytest src/api --cov=src/api --cov-report=term-missing
+        # 3. ON LANCE LES TESTS
+        # .         -> cherche les fichiers test_*.py partout (donc dans /tests)
+        # --cov=src/api -> calcule le score uniquement pour ton code source
+        pytest . --cov=src/api --cov-report=term-missing
 
 
     - name: Déploiement sur Hugging Face
