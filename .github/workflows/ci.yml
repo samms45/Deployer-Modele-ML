@@ -48,3 +48,13 @@ jobs:
         # AJOUT : On crée les tables dans la DB de GitHub avant de lancer pytest
         python -c "from db_config import engine; from db_models import Base; Base.metadata.create_all(bind=engine)"
         pytest
+
+
+        # Déploiement automatique vers Hugging Face Spaces si les tests réussissent (CD)
+    - name: Push to Hugging Face
+      uses: adrien-v/huggingface-sync-action@v1.1
+      with:
+        github-repo-name: samms45/Deployer-Modele-ML
+        huggingface-repo-name: samss1010/api-prediction-rh
+        hf-token: ${{ secrets.HF_TOKEN }}
+        hf-repo-type: space
