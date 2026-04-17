@@ -64,23 +64,23 @@ jobs:
         pytest . --cov=src/api --cov-report=term-missing
 
 
-    - name: Push to Hugging Face
+    - name: Push to Hugging Face (Method API)
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
+        # 1. On installe l'outil officiel
+        pip install huggingface_hub
         
-        # 1. On s'assure que LFS est bien là
-        git lfs install
-        
-        # 2. NETTOYAGE CRUCIAL : On force Git à oublier le fichier pour le re-traiter proprement
-        git rm --cached src/api/model_final_reg.joblib || echo "Déjà retiré"
-        git add .gitattributes
-        git add src/api/model_final_reg.joblib
-        
-        # 3. On commit les changements LFS
-        git commit -m "data: force conversion to LFS for joblib model" || echo "Pas de changements"
-        
-        # 4. LE PUSH (avec l'option pour sauter la vérification binaire si possible)
-        git push --force https://samss1010:$HF_TOKEN@huggingface.co/spaces/samss1010/api-prediction-rh brouillon:main
+        # 2. On utilise Python pour uploader tout le dossier proprement
+        # Cette méthode ignore les caprices de Git et LFS
+        python -c "
+        from huggingface_hub import HfApi
+        api = HfApi()
+        api.upload_folder(
+            folder_path='.',
+            repo_id='samss1010/api-prediction-rh',
+            repo_type='space',
+            token='${{ secrets.HF_TOKEN }}',
+            path_in_repo='.',
+            ignore_patterns=['.git*', 'tests', '__pycache__', '.pytest_cache']
+        )"
