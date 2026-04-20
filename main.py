@@ -124,9 +124,10 @@ def get_history(db: Session = Depends(get_db)):
         # On récupère tout sans le .order_by(timestamp) pour éviter l'erreur de colonne
         history = db.query(PredictionLog).all()
         # On renvoie les 10 derniers éléments
-        return history[-10:] if history else []
+        return history
     except Exception as e:
         return {"error": f"Impossible de récupérer l'historique : {e}"}
+    
 
 if __name__ == "__main__":
     import uvicorn
