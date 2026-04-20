@@ -129,6 +129,9 @@ def get_history(db: Session = Depends(get_db)):
         return {"error": f"Impossible de récupérer l'historique : {e}"}
     
 
+print("Vérification de la structure de la base de données...")
+Base.metadata.create_all(bind=engine)
+
 if __name__ == "__main__":
     import uvicorn
     # 0.0.0.0 permet au serveur d'accepter les requêtes externes (celles de HF)
