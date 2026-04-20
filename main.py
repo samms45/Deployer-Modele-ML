@@ -11,38 +11,31 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "src", "api", "model_final_reg.joblib")
 
+# Chargement du modèle avec gestion d'erreur
 if os.path.exists(MODEL_PATH):
     model = joblib.load(MODEL_PATH)
 else:
-    raise FileNotFoundError(f"Modèle introuvable à : {MODEL_PATH}")
+    raise FileNotFoundError(f"Modèle introuvable à l'endroit prévu : {MODEL_PATH}")
 
-# --- LES IMPORTS DE TON CODE ---
+# --- LES IMPORTS DE TON CODE (DB) ---
 from src.api.db_config import engine, get_db 
 from src.api.db_models import Base, PredictionLog 
 from src.api.init_db import init_db
 
 # --- SYNCHRONISATION DE LA BASE DE DONNÉES ---
-# Ce bloc force la création de la colonne 'timestamp' si elle manque
+# CE BLOC EST CRUCIAL : Il réinitialise la table pour ajouter la colonne 'timestamp' manquante
 try:
-    print("--- SYNCHRONISATION DE LA BASE DE DONNÉES ---")
-    # Si l'erreur de colonne persiste, remplace create_all par :
-    # Base.metadata.drop_all(bind=engine)
-    # Base.metadata.create_all(bind=engine)
+    print("--- SYNCHRONISATION FORCEE DE LA BASE DE DONNÉES ---")
+    # /!\ drop_all efface les données existantes pour pouvoir recréer la structure
+    # C'est nécessaire car ta table actuelle sur HF n'a pas la colonne timestamp
+    Base.metadata.drop_all(bind=engine) 
     Base.metadata.create_all(bind=engine)
-    print("Base de données synchronisée avec succès.")
+    print("Base de données réinitialisée avec succès (colonne timestamp incluse).")
 except Exception as e:
     print(f"Attention - Erreur lors de la synchro DB : {e}")
 
 # --- CONFIGURATION SÉCURITÉ ---
 load_dotenv()
-
-# Debug pour Hugging Face
-print("--- DEBUG CONNEXION ---")
-db_url_check = os.getenv("DATABASE_URL")
-if db_url_check:
-    print(f"DATABASE_URL détectée (début) : {db_url_check[:15]}...")
-else:
-    print("ERREUR : DATABASE_URL est introuvable !")
 
 API_KEY_VAL = os.getenv("API_KEY")
 API_KEY_NAME = "access_token"
@@ -92,7 +85,7 @@ class EmployeeData(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "Bienvenue sur l'API RH. cimer les gros BouzBouz"}
+    return {"message": "Bienvenue sur l'API RH. API opérationnelle."}
 
 @app.post("/predict", dependencies=[Depends(get_api_key)])
 def predict(data: EmployeeData, db: Session = Depends(get_db)):
@@ -128,14 +121,14 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
 @app.get("/history", dependencies=[Depends(get_api_key)])
 def get_history(db: Session = Depends(get_db)):
     try:
-        # On récupère les logs. Le tri se fera via Python si la colonne timestamp est capricieuse au début
+        # Maintenant que la colonne existe, .all() fonctionnera sans crash
         history = db.query(PredictionLog).all()
         return history
     except Exception as e:
         return {"error": f"Impossible de récupérer l'historique : {e}"}
 
-# --- LANCEMENT ---
+# --- LANCEMENT SERVEUR ---
 if __name__ == "__main__":
     import uvicorn
-    # Configuration impérative pour Hugging Face
+    # 0.0.0.0 et 7860 sont indispensables pour Hugging Face
     uvicorn.run(app, host="0.0.0.0", port=7860)
