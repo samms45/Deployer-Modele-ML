@@ -19,5 +19,6 @@ EXPOSE 7860
 
 # 7. Lancement de l'API
 # Note: si ton application est dans main.py, on lance main:app
-CMD python src/api/seed_data.py && uvicorn main:app --host 0.0.0.0 --port 7860
+# On ajoute l'init_db.py avant le seed
+CMD python src/api/init_db.py && python src/api/seed_data.py && uvicorn main:app --host 0.0.0.0 --port 7860
 
