@@ -131,4 +131,6 @@ def get_history(db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # 0.0.0.0 permet au serveur d'accepter les requêtes externes (celles de HF)
+    # 7860 est le port standard recommandé par Hugging Face
+    uvicorn.run(app, host="0.0.0.0", port=7860)

@@ -2,7 +2,7 @@ import json
 import requests
 import os
 
-def run_seeding(json_path="api_data.json", url="http://127.0.0.1:8000/predict"):
+def run_seeding(json_path="api_data.json", url="http://0.0.0.0:7860/predict"):
     if not os.path.exists(json_path):
         print(f"Fichier {json_path} introuvable.")
         return False
