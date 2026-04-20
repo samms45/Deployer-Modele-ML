@@ -3,12 +3,13 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from src.api.db_config import Base
 import datetime
+from sqlalchemy import func
 
 class PredictionLog(Base):
     __tablename__ = "predictions"
 
     id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow) # Heure de la prédiction
+    timestamp = Column(DateTime, server_default=func.now())
     
     # Inputs clés pour le monitoring
     age = Column(Integer)
