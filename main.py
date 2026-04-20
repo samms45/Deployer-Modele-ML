@@ -8,15 +8,12 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 # --- CONFIGURATION DES CHEMINS & CHARGEMENT ---
-# On définit le point de repère (racine du projet)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "src", "api", "model_final_reg.joblib")
 
-# Chargement du modèle
 if os.path.exists(MODEL_PATH):
     model = joblib.load(MODEL_PATH)
 else:
-    # Si tu ne veux vraiment pas de BASE_DIR, utilise au moins un print pour debugger
     raise FileNotFoundError(f"Modèle introuvable à : {MODEL_PATH}")
 
 # --- LES IMPORTS DE TON CODE ---
@@ -24,17 +21,28 @@ from src.api.db_config import engine, get_db
 from src.api.db_models import Base, PredictionLog 
 from src.api.init_db import init_db
 
+# --- SYNCHRONISATION DE LA BASE DE DONNÉES ---
+# Ce bloc force la création de la colonne 'timestamp' si elle manque
+try:
+    print("--- SYNCHRONISATION DE LA BASE DE DONNÉES ---")
+    # Si l'erreur de colonne persiste, remplace create_all par :
+    # Base.metadata.drop_all(bind=engine)
+    # Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("Base de données synchronisée avec succès.")
+except Exception as e:
+    print(f"Attention - Erreur lors de la synchro DB : {e}")
+
 # --- CONFIGURATION SÉCURITÉ ---
 load_dotenv()
 
-# --- ICI LE DEBUG POUR LES LOGS HUGGING FACE ---
+# Debug pour Hugging Face
 print("--- DEBUG CONNEXION ---")
 db_url_check = os.getenv("DATABASE_URL")
 if db_url_check:
     print(f"DATABASE_URL détectée (début) : {db_url_check[:15]}...")
 else:
     print("ERREUR : DATABASE_URL est introuvable !")
-print("--- FIN DEBUG ---")
 
 API_KEY_VAL = os.getenv("API_KEY")
 API_KEY_NAME = "access_token"
@@ -108,7 +116,8 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
         db.add(new_log)
         db.commit()
     except Exception as e:
-        print(f"Erreur SQL : {e}")
+        print(f"Erreur SQL insertion : {e}")
+        db.rollback()
 
     return {
         "prediction": prediction,
@@ -116,24 +125,17 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
         "probabilite_depart": round(probability, 2)
     }
 
-
-# --- LA ROUTE HISTORY CORRIGÉE ---
 @app.get("/history", dependencies=[Depends(get_api_key)])
 def get_history(db: Session = Depends(get_db)):
     try:
-        # On récupère tout sans le .order_by(timestamp) pour éviter l'erreur de colonne
+        # On récupère les logs. Le tri se fera via Python si la colonne timestamp est capricieuse au début
         history = db.query(PredictionLog).all()
-        # On renvoie les 10 derniers éléments
         return history
     except Exception as e:
         return {"error": f"Impossible de récupérer l'historique : {e}"}
-    
 
-print("Vérification de la structure de la base de données...")
-Base.metadata.create_all(bind=engine)
-
+# --- LANCEMENT ---
 if __name__ == "__main__":
     import uvicorn
-    # 0.0.0.0 permet au serveur d'accepter les requêtes externes (celles de HF)
-    # 7860 est le port standard recommandé par Hugging Face
+    # Configuration impérative pour Hugging Face
     uvicorn.run(app, host="0.0.0.0", port=7860)
