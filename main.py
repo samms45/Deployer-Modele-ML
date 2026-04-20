@@ -23,14 +23,12 @@ from src.api.db_models import Base, PredictionLog
 from src.api.init_db import init_db
 
 # --- SYNCHRONISATION DE LA BASE DE DONNÉES ---
-# CE BLOC EST CRUCIAL : Il réinitialise la table pour ajouter la colonne 'timestamp' manquante
 try:
-    print("--- SYNCHRONISATION FORCEE DE LA BASE DE DONNÉES ---")
-    # /!\ drop_all efface les données existantes pour pouvoir recréer la structure
-    # C'est nécessaire car ta table actuelle sur HF n'a pas la colonne timestamp
-    Base.metadata.drop_all(bind=engine) 
+    print("--- SYNCHRONISATION DE LA BASE DE DONNÉES ---")
+    # Maintenant que la colonne 'timestamp' a été créée lors du dernier push,
+    # on n'utilise plus drop_all pour ne pas perdre l'historique à chaque redémarrage.
     Base.metadata.create_all(bind=engine)
-    print("Base de données réinitialisée avec succès (colonne timestamp incluse).")
+    print("Base de données opérationnelle.")
 except Exception as e:
     print(f"Attention - Erreur lors de la synchro DB : {e}")
 
@@ -85,7 +83,7 @@ class EmployeeData(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "Bienvenue sur l'API RH. API opérationnelle."}
+    return {"message": "Bienvenue sur l'API RH. cimer les gros BouzBouz"}
 
 @app.post("/predict", dependencies=[Depends(get_api_key)])
 def predict(data: EmployeeData, db: Session = Depends(get_db)):
@@ -121,8 +119,8 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
 @app.get("/history", dependencies=[Depends(get_api_key)])
 def get_history(db: Session = Depends(get_db)):
     try:
-        # Maintenant que la colonne existe, .all() fonctionnera sans crash
-        history = db.query(PredictionLog).all()
+        # Récupère l'historique complet trié par id décroissant (les derniers en premier)
+        history = db.query(PredictionLog).order_by(PredictionLog.id.desc()).all()
         return history
     except Exception as e:
         return {"error": f"Impossible de récupérer l'historique : {e}"}
@@ -130,5 +128,5 @@ def get_history(db: Session = Depends(get_db)):
 # --- LANCEMENT SERVEUR ---
 if __name__ == "__main__":
     import uvicorn
-    # 0.0.0.0 et 7860 sont indispensables pour Hugging Face
+    # Configuration indispensable pour Hugging Face
     uvicorn.run(app, host="0.0.0.0", port=7860)
