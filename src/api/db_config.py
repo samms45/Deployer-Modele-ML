@@ -14,6 +14,11 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("L'URL de la base de données n'est pas configurée dans le fichier .env")
 
+# --- AJOUTE CETTE PETITE CORRECTION ICI ---
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+
 # 3. Configuration SQLAlchemy standard
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

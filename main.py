@@ -26,9 +26,18 @@ from src.api.init_db import init_db
 
 # --- CONFIGURATION SÉCURITÉ ---
 load_dotenv()
+
+# --- ICI LE DEBUG POUR LES LOGS HUGGING FACE ---
+print("--- DEBUG CONNEXION ---")
+db_url_check = os.getenv("DATABASE_URL")
+if db_url_check:
+    print(f"DATABASE_URL détectée (début) : {db_url_check[:15]}...")
+else:
+    print("ERREUR : DATABASE_URL est introuvable !")
+print("--- FIN DEBUG ---")
+
 API_KEY_VAL = os.getenv("API_KEY")
 API_KEY_NAME = "access_token"
-
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 def get_api_key(header_api_key: str = Security(api_key_header)):
@@ -107,11 +116,15 @@ def predict(data: EmployeeData, db: Session = Depends(get_db)):
         "probabilite_depart": round(probability, 2)
     }
 
+
+# --- LA ROUTE HISTORY CORRIGÉE ---
 @app.get("/history", dependencies=[Depends(get_api_key)])
 def get_history(db: Session = Depends(get_db)):
     try:
-        history = db.query(PredictionLog).order_by(PredictionLog.timestamp.desc()).limit(10).all()
-        return history
+        # On récupère tout sans le .order_by(timestamp) pour éviter l'erreur de colonne
+        history = db.query(PredictionLog).all()
+        # On renvoie les 10 derniers éléments
+        return history[-10:] if history else []
     except Exception as e:
         return {"error": f"Impossible de récupérer l'historique : {e}"}
 
